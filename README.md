@@ -18,6 +18,11 @@ src2md is a command-line tool written in Rust that traverses a project directory
 
 Ensure you have Rust and Cargo installed.
 
+To install src2md with cargo, run command:
+```sh
+cargo install --git https://github.com/MatiasHiltunen/src2md.git
+```
+
 ### Build from Source
 
 Clone the repository and build the project:
