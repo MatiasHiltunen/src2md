@@ -2,6 +2,9 @@
 
 src2md is a command-line tool written in Rust that traverses a project directory, collects code and text files, and compiles them into a single Markdown (.md) file. It respects ignore files (like .gitignore) and allows for customization through command-line options.
 
+>[!CAUTION]
+>Purpose of this tool is to quickly gather the entire project's code to a single file for various purposes. It works nicely for example with [mdbook](https://rust-lang.github.io/mdBook/index.html). The tool is quite powerfull and traverses even largest projects in seconds. It is good idea to use it only with known directories as currently there is no builtin limits, even for depth of the directory. The tool also uses rust's `unsafe` code due to usage of memmap2 crate. In conclusion, do not run the tool for example in system directories, as at best it would create enormous .md file and at worst, it could break your computer for good.
+
 ## Features
 
 - Recursively scans directories to find files.
