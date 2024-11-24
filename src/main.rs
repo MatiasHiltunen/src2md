@@ -10,8 +10,8 @@ use std::path::{Path, PathBuf};
 
 fn main() -> io::Result<()> {
     let matches = Command::new("src2md")
-        .version("1.0")
-        .author("Your Name <you@example.com>")
+        .version("0.1.0")
+        .author("Matias Hiltunen https://github.com/MatiasHiltunen")
         .about("Collects code and text files into a single .md file")
         .arg(
             Arg::new("output")
