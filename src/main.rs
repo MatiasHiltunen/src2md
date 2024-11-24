@@ -103,7 +103,7 @@ fn main() -> io::Result<()> {
                 }
 
                 let rel_path = path.strip_prefix(&project_root).unwrap();
-
+                let file = File::open(rel_path)?;
                 let mmap = unsafe { Mmap::map(&file)? };
 
                 // Determine if the file is binary or text
