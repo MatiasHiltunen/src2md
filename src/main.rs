@@ -4,7 +4,6 @@ use content_inspector::{inspect, ContentType};
 use ignore::{DirEntry, WalkBuilder};
 use memmap2::Mmap;
 use std::collections::HashSet;
-use std::ffi::OsStr;
 use std::fs::{self, File};
 use std::io::{self, BufWriter, Write};
 use std::path::{Path, PathBuf};
@@ -13,20 +12,16 @@ mod tests;
 
 fn main() -> io::Result<()> {
     let config = parse_args()?;
-    setup_output_directory(&config)?;
+    prepare_output(&config)?;
 
     let walker = build_walker(&config)?;
 
-    for result in walker {
-        match result {
-            Ok(entry) => process_entry(entry, &config)?,
-            Err(err) => eprintln!("Error: {}", err),
-        }
-    }
+    process_files(walker, &config)?;
 
     Ok(())
 }
 
+#[derive(Debug, Clone)]
 struct Config {
     project_root: PathBuf,
     output_path: PathBuf,
@@ -34,6 +29,7 @@ struct Config {
     group_by: Option<String>,
     ignore_file: Option<PathBuf>,
     specific_paths: HashSet<PathBuf>,
+    default_ignores: HashSet<String>,
 }
 
 fn parse_args() -> io::Result<Config> {
@@ -81,26 +77,51 @@ fn parse_args() -> io::Result<Config> {
                 .help("Groups output by 'file' or 'folder'")
                 .num_args(1)
                 .value_parser([
-                    PossibleValue::new("file").help("Creates separate .md files to all files"),
+                    PossibleValue::new("file").help("Creates separate .md files for all files"),
                     PossibleValue::new("folder")
-                        .help("Creates <folder_name>.md files to output directory"),
+                        .help("Creates <folder_name>.md files in output directory"),
                 ]),
         )
         .get_matches();
 
-    let project_root = std::env::current_dir()?;
+    let project_root = std::env::current_dir()?.canonicalize()?;
 
     let output_path = matches
         .get_one::<String>("output")
         .map(PathBuf::from)
         .unwrap_or_else(|| project_root.join("all_the_code.md"));
 
+    let output_path = output_path.canonicalize().unwrap_or(output_path);
+
     let select_only: HashSet<PathBuf> = matches
         .get_many::<String>("select-only")
-        .map(|vals| vals.map(|s| project_root.join(s)).collect())
+        .map(|vals| {
+            vals.filter_map(|s| {
+                let path = project_root.join(s);
+                path.canonicalize().ok()
+            })
+            .collect()
+        })
         .unwrap_or_else(HashSet::new);
 
     let group_by = matches.get_one::<String>("group-by").map(|s| s.to_string());
+
+    // Validate output path and group_by combinations
+    if group_by.is_none() && output_path.is_dir() {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "Output path cannot be a directory when --group-by is not specified",
+        ));
+    }
+
+    if let Some(ref gb) = group_by {
+        if output_path.is_file() {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "Output path must be a directory when using --group-by",
+            ));
+        }
+    }
 
     let ignore_file_path = matches.get_one::<String>("ignore").map(PathBuf::from);
 
@@ -122,28 +143,17 @@ fn parse_args() -> io::Result<Config> {
     let specific_paths: HashSet<PathBuf> = if matches.contains_id("paths") {
         specified_paths
             .iter()
-            .map(|p| project_root.join(p))
+            .filter_map(|p| project_root.join(p).canonicalize().ok())
             .collect()
     } else {
         HashSet::new()
     };
 
-     // Validate output path and group_by combinations
-     if group_by.is_none() && output_path.is_dir() {
-        return Err(io::Error::new(
-            io::ErrorKind::InvalidInput,
-            "Output path cannot be a directory when --group-by is not specified",
-        ));
-    }
-
-    if let Some(ref _gb) = group_by {
-        if output_path.is_file() {
-            return Err(io::Error::new(
-                io::ErrorKind::InvalidInput,
-                "Output path must be a directory when using --group-by",
-            ));
-        }
-    }
+    let default_ignores = HashSet::from([
+        ".git".to_string(),
+        "node_modules".to_string(),
+        "target".to_string(),
+    ]);
 
     Ok(Config {
         project_root,
@@ -152,11 +162,22 @@ fn parse_args() -> io::Result<Config> {
         group_by,
         ignore_file,
         specific_paths,
+        default_ignores,
     })
 }
 
-fn setup_output_directory(config: &Config) -> io::Result<()> {
-    if let Some(ref _group_by) = config.group_by {
+fn prepare_output(config: &Config) -> io::Result<()> {
+    // Remove existing output
+    if config.output_path.exists() {
+        if config.output_path.is_file() {
+            fs::remove_file(&config.output_path)?;
+        } else if config.output_path.is_dir() {
+            fs::remove_dir_all(&config.output_path)?;
+        }
+    }
+
+    // Ensure output directory exists
+    if let Some(ref group_by) = config.group_by {
         if !config.output_path.exists() {
             fs::create_dir_all(&config.output_path)?;
         }
@@ -165,35 +186,145 @@ fn setup_output_directory(config: &Config) -> io::Result<()> {
             fs::create_dir_all(parent)?;
         }
     }
+
     Ok(())
 }
+
 fn build_walker(
     config: &Config,
 ) -> io::Result<impl Iterator<Item = Result<DirEntry, ignore::Error>>> {
-    let mut walker_builder = WalkBuilder::new(&config.project_root);
-    walker_builder.hidden(false).ignore(false);
+    let mut builder = WalkBuilder::new(&config.project_root);
+    builder.hidden(false).ignore(false);
 
     if let Some(ref ignore_file) = config.ignore_file {
-        walker_builder.add_ignore(ignore_file);
-    } else {
-        walker_builder.filter_entry(|e| !is_hidden(e));
+        builder.add_ignore(ignore_file);
     }
 
-    Ok(walker_builder.build())
+    // Clone the necessary data to move into the closure
+    let output_path = config.output_path.clone();
+    let default_ignores = config.default_ignores.clone();
+
+    builder.filter_entry(move |entry| {
+        let path = match entry.path().canonicalize() {
+            Ok(p) => p,
+            Err(_) => return false,
+        };
+
+        // Exclude the output path itself
+        if path == output_path || path.starts_with(&output_path) {
+            return false;
+        }
+
+        // Exclude default ignores
+        if let Some(file_name) = entry.file_name().to_str() {
+            if default_ignores.contains(file_name) {
+                return false;
+            }
+        } else {
+            return false;
+        }
+
+        // Exclude hidden files/directories
+        if is_hidden(&entry) {
+            return false;
+        }
+
+        true
+    });
+
+    Ok(builder.build())
 }
 
-fn process_entry(entry: DirEntry, config: &Config) -> io::Result<()> {
-    let path = entry.path();
+fn should_include(entry: &DirEntry, config: &Config) -> bool {
+    let path = match entry.path().canonicalize() {
+        Ok(p) => p,
+        Err(_) => return false,
+    };
 
-    if path.is_dir() || (!config.select_only.is_empty() && !config.select_only.contains(path)) {
-        return Ok(());
+    // Exclude the output path itself
+    if path == config.output_path || path.starts_with(&config.output_path) {
+        return false;
     }
 
-    if !config.specific_paths.is_empty() && !is_in_specific_paths(path, &config.specific_paths) {
-        return Ok(());
+    // Exclude default ignores
+    if config
+        .default_ignores
+        .contains(&entry.file_name().to_string_lossy().to_string())
+    {
+        return false;
     }
 
+    // Exclude hidden files/directories
+    if is_hidden(&entry) {
+        return false;
+    }
+
+    true
+}
+
+fn is_hidden(entry: &DirEntry) -> bool {
+    let file_name = entry.file_name();
+    if file_name.to_string_lossy().starts_with('.') {
+        return true;
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        use std::os::windows::fs::MetadataExt;
+        entry
+            .metadata()
+            .map(|meta| meta.file_attributes() & 0x2 != 0)
+            .unwrap_or(false)
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    {
+        false
+    }
+}
+
+fn process_files(
+    walker: impl Iterator<Item = Result<DirEntry, ignore::Error>>,
+    config: &Config,
+) -> io::Result<()> {
+    for result in walker {
+        let entry = match result {
+            Ok(e) => e,
+            Err(err) => {
+                eprintln!("Error: {}", err);
+                continue;
+            }
+        };
+
+        let path = entry.path();
+        if path.is_dir() {
+            continue;
+        }
+
+        let canonical_path = match path.canonicalize() {
+            Ok(p) => p,
+            Err(_) => continue,
+        };
+
+        if !config.select_only.is_empty() && !config.select_only.contains(&canonical_path) {
+            continue;
+        }
+
+        if !config.specific_paths.is_empty()
+            && !is_in_specific_paths(&canonical_path, &config.specific_paths)
+        {
+            continue;
+        }
+
+        process_entry(&canonical_path, config)?;
+    }
+
+    Ok(())
+}
+
+fn process_entry(path: &Path, config: &Config) -> io::Result<()> {
     let rel_path = path.strip_prefix(&config.project_root).unwrap();
+
     let file = File::open(path)?;
     let mmap = unsafe { Mmap::map(&file)? };
 
@@ -201,22 +332,25 @@ fn process_entry(entry: DirEntry, config: &Config) -> io::Result<()> {
     let content_type = inspect(&mmap[..sample_size]);
 
     let output_file = match config.group_by.as_deref() {
-        Some("file") => config
-            .output_path
-            .join(rel_path.file_name().unwrap())
-            .with_extension("md"),
+        Some("file") => {
+            let mut output_file = config.output_path.join(rel_path);
+            output_file.set_extension("md");
+            output_file
+        }
         Some("folder") => {
-            let folder_name = rel_path.parent().unwrap_or_else(|| Path::new("root"));
-            config.output_path.join(folder_name).join("output.md")
+            let folder_path = rel_path.parent().unwrap_or_else(|| Path::new("root"));
+            let mut output_file = config.output_path.join(folder_path);
+            output_file.set_extension("md");
+            output_file
         }
-        _ => {
-            // When output path is a file, we should write to it directly
-            config.output_path.clone()
-        }
+        _ => config.output_path.clone(),
     };
 
-    fs::create_dir_all(output_file.parent().unwrap())?;
-    let mut writer = BufWriter::new(File::create(output_file)?);
+    if let Some(parent) = output_file.parent() {
+        fs::create_dir_all(parent)?;
+    }
+
+    let mut writer = BufWriter::new(File::create(&output_file)?);
 
     if content_type == ContentType::BINARY {
         writeln!(writer, "## {}\n", rel_path.display())?;
@@ -231,28 +365,14 @@ fn process_entry(entry: DirEntry, config: &Config) -> io::Result<()> {
     Ok(())
 }
 
-fn is_hidden(entry: &DirEntry) -> bool {
-    entry
-        .path()
-        .file_name()
-        .and_then(OsStr::to_str)
-        .map_or(false, |s| s.starts_with('.'))
-}
-
 fn is_in_specific_paths(path: &Path, specific_paths: &HashSet<PathBuf>) -> bool {
-    specific_paths.iter().any(|p| {
-        if p.is_file() {
-            p == path
-        } else {
-            path.starts_with(p)
-        }
-    })
+    specific_paths.iter().any(|p| path.starts_with(p))
 }
 
 fn get_language_tag(path: &Path) -> &'static str {
     match path
         .extension()
-        .and_then(OsStr::to_str)
+        .and_then(|s| s.to_str())
         .unwrap_or("")
         .to_lowercase()
         .as_str()
