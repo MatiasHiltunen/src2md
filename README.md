@@ -124,16 +124,6 @@ async fn main() -> anyhow::Result<()> {
 
 ---
 
-## Cargo Features
-
-_Planned (not yet active):_
-
-- `highlight`: syntax highlighting with `syntect`
-- `serde`: config serialization
-- `cli-only`: trim library for tiny builds
-
----
-
 ## Changelog
 
 ### v0.1.1
