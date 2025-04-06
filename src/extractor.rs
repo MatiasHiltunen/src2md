@@ -14,7 +14,6 @@ pub async fn extract_from_markdown(
     md_path: &PathBuf,
     extract_root: Option<&PathBuf>,
 ) -> Result<()> {
-    // Memory-map the markdown file for zero-copy processing
     let file = StdFile::open(md_path)
         .with_context(|| format!("Failed to open markdown file: {}", md_path.display()))?;
 
@@ -24,30 +23,25 @@ pub async fn extract_from_markdown(
             .with_context(|| format!("Failed to memory-map markdown file: {}", md_path.display()))?
     };
 
-    // Convert the mmap data into a valid UTF-8 string
     let content = str::from_utf8(&mmap)
         .with_context(|| format!("Markdown file is not valid UTF-8: {}", md_path.display()))?;
 
-    // Regex for parsing the markdown headers and code fences
     let header_re = Regex::new(r"(?m)^##\s+(.+)$")?;
-    let fence_re = Regex::new(r"(?ms)^```[a-zA-Z0-9]*\n(.*?)\n```")?;
+    let fence_re = Regex::new(r"(?ms)^`{3,}[a-zA-Z0-9]*\n(.*?)\n`{3,}")?;
 
     let mut positions = header_re.find_iter(content).peekable();
 
     while let Some(header_match) = positions.next() {
-        // Get the file path from the markdown header
         let file_path_str = header_re
             .captures(header_match.as_str())
             .and_then(|c| c.get(1))
             .map(|m| m.as_str())
             .unwrap();
 
-        // Normalize to relative path
         let rel_path = Path::new(file_path_str)
             .strip_prefix("/")
             .unwrap_or(Path::new(file_path_str));
 
-        // Resolve output path
         let out_path = if let Some(root) = extract_root {
             root.join(rel_path)
         } else {
@@ -62,7 +56,6 @@ pub async fn extract_from_markdown(
             continue;
         }
 
-        // Extract and write the code block
         if let Some(cap) = fence_re.captures(block) {
             let code = cap.get(1).map(|m| m.as_str()).unwrap_or("");
 
@@ -79,4 +72,3 @@ pub async fn extract_from_markdown(
 
     Ok(())
 }
-

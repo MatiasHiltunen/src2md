@@ -25,13 +25,11 @@ impl MarkdownWriter<tokio::fs::File> {
 
         debug!("Writing file: {}", rel_path.display());
 
-        // Write header
         self.writer
             .write_all(format!("## {}\n\n", rel_path.display()).as_bytes())
             .await
             .with_context(|| format!("Failed to write heading for {}", rel_path.display()))?;
 
-        // Open and map file
         let file = StdFile::open(path)
             .with_context(|| format!("Failed to open file: {}", path.display()))?;
 
@@ -41,20 +39,6 @@ impl MarkdownWriter<tokio::fs::File> {
                 .with_context(|| format!("Failed to mmap file: {}", path.display()))?
         };
 
-        if mmap.len() == 0 {
-            debug!(
-                "WARNING: File '{}' was mmap'd but is empty!",
-                path.display()
-            );
-        }
-
-        // Preview the start of the file
-        let preview_len = std::cmp::min(100, mmap.len());
-        if let Ok(preview) = std::str::from_utf8(&mmap[..preview_len]) {
-            debug!("Preview: {:?}", preview);
-        }
-
-        // Detect binary vs text
         let sample_size = std::cmp::min(8192, mmap.len());
         let content_type = inspect(&mmap[..sample_size]);
 
@@ -67,46 +51,49 @@ impl MarkdownWriter<tokio::fs::File> {
                 })?;
         } else {
             let lang = get_language_tag(path);
+
+            // Fully own content string safely
+            let content: String = match str::from_utf8(&mmap) {
+                Ok(s) => s.to_string(),
+                Err(_) => std::fs::read_to_string(path)
+                    .with_context(|| format!("Fallback read failed for {}", path.display()))?,
+            };
+            let text = content.as_str();
+
+            // Determine how many backticks exist in content
+            let max_backtick_run = text
+                .lines()
+                .filter_map(|line| {
+                    let trimmed = line.trim_start();
+                    if trimmed.starts_with('`') {
+                        Some(trimmed.chars().take_while(|&c| c == '`').count())
+                    } else {
+                        None
+                    }
+                })
+                .max()
+                .unwrap_or(2);
+
+            let fence = "`".repeat(max_backtick_run + 1);
+
             self.writer
-                .write_all(format!("```{}\n", lang).as_bytes())
+                .write_all(format!("{}{}\n", fence, lang).as_bytes())
                 .await
                 .with_context(|| {
-                    format!(
-                        "Failed to write opening code fence for {}",
-                        rel_path.display()
-                    )
+                    format!("Failed to write opening fence for {}", rel_path.display())
                 })?;
 
-            // Attempt to write from memory-mapped data
-            if let Ok(text) = str::from_utf8(&mmap) {
-                self.writer
-                    .write_all(text.as_bytes())
-                    .await
-                    .with_context(|| {
-                        format!("Failed to write UTF-8 content from {}", rel_path.display())
-                    })?;
-            } else {
-                // Fallback to read_to_string
-                debug!(
-                    "Invalid UTF-8 in {}, falling back to read_to_string",
-                    rel_path.display()
-                );
-                let content = std::fs::read_to_string(path)
-                    .with_context(|| format!("Fallback read failed for {}", path.display()))?;
-                self.writer
-                    .write_all(content.as_bytes())
-                    .await
-                    .with_context(|| {
-                        format!("Failed to write fallback string for {}", rel_path.display())
-                    })?;
-            }
+            self.writer
+                .write_all(text.as_bytes())
+                .await
+                .with_context(|| format!("Failed to write content for {}", rel_path.display()))?;
 
-            self.writer.write_all(b"\n```\n\n").await.with_context(|| {
-                format!(
-                    "Failed to write closing code fence for {}",
-                    rel_path.display()
-                )
-            })?;
+            self.writer
+                .write_all(format!("\n{}\n\n", fence).as_bytes())
+                .await
+                .with_context(|| {
+                    format!("Failed to write closing fence for {}", rel_path.display())
+                })?;
         }
 
         self.writer.flush().await?;
@@ -118,4 +105,3 @@ impl MarkdownWriter<tokio::fs::File> {
         self.writer.flush().await.context("Failed to flush output")
     }
 }
-
