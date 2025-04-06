@@ -1,4 +1,5 @@
 use anyhow::{Context, Result};
+use log::debug;
 use memmap2::MmapOptions;
 use regex::Regex;
 use std::fs::File as StdFile;
@@ -29,7 +30,7 @@ pub async fn extract_from_markdown(
 
     // Regex for parsing the markdown headers and code fences
     let header_re = Regex::new(r"(?m)^##\s+(.+)$")?;
-    let fence_re = Regex::new(r"(?m)^```[a-zA-Z0-9]*\n(.*?)\n```\\n?").unwrap();
+    let fence_re = Regex::new(r"(?ms)^```[a-zA-Z0-9]*\n(.*?)\n```")?;
 
     let mut positions = header_re.find_iter(content).peekable();
 
@@ -41,16 +42,18 @@ pub async fn extract_from_markdown(
             .map(|m| m.as_str())
             .unwrap();
 
-        let rel_path = Path::new(file_path_str);
+        // Normalize to relative path
+        let rel_path = Path::new(file_path_str)
+            .strip_prefix("/")
+            .unwrap_or(Path::new(file_path_str));
 
-        // Apply the extract root path, if provided
+        // Resolve output path
         let out_path = if let Some(root) = extract_root {
             root.join(rel_path)
         } else {
-            PathBuf::from(rel_path)
+            rel_path.to_path_buf()
         };
 
-        // Find the content block corresponding to this file
         let start = header_match.end();
         let end = positions.peek().map(|m| m.start()).unwrap_or(content.len());
 
@@ -59,16 +62,16 @@ pub async fn extract_from_markdown(
             continue;
         }
 
-        // If a valid code block is found, write it to the corresponding file
+        // Extract and write the code block
         if let Some(cap) = fence_re.captures(block) {
             let code = cap.get(1).map(|m| m.as_str()).unwrap_or("");
 
-            // Create necessary directories
+            debug!("Extracting to: {}", out_path.display());
+
             if let Some(parent) = out_path.parent() {
                 tokio_fs::create_dir_all(parent).await?;
             }
 
-            // Write the extracted code to the file
             let mut file = tokio_fs::File::create(&out_path).await?;
             file.write_all(code.as_bytes()).await?;
         }
