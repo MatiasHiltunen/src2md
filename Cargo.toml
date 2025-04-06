@@ -1,10 +1,12 @@
 [package]
 name = "src2md"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 
 [dependencies]
 ignore = "0.4"
 content_inspector = "0.2"
 memmap2 = "0.9.5"
 clap = { version = "4", features = ["derive"] }
+tokio = { version = "1", features = ["fs", "io-util", "macros", "rt-multi-thread"] }
+anyhow = "1.0"
