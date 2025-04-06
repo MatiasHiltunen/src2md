@@ -136,12 +136,14 @@ _Planned (not yet active):_
 
 ## Changelog
 
-### v0.1.0
-- Initial release
+### v0.1.1
 - CLI and library mode
-- Memory-mapped (zero-copy) file reading
 - Safe Markdown code fencing
 - Extract mode with `--extract` and `--extract-path`
+
+### v0.1.0
+- Initial release
+- Memory-mapped (zero-copy) file reading
 
 ---
 
