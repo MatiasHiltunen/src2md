@@ -6,6 +6,11 @@
 
 Turn source/text files into a single Markdown document — or extract them back. Built with Rust **2024 edition**.
 
+> **Warning**  
+> This project is in early development and may change rapidly.  
+> AI (ChatGPT) has been extensively used in the design and implementation of this codebase.  
+> Review carefully before using in production or contributing.
+
 ---
 
 ## Features
@@ -18,6 +23,7 @@ Turn source/text files into a single Markdown document — or extract them back.
 - Lists binary files by their paths (content omitted).
 - **Zero-copy** file reading using memory-mapped files.
 - Extracts files back from a generated Markdown file (with `--extract`).
+- Usable as a **command-line tool** or **Rust library**.
 
 ---
 
@@ -27,7 +33,7 @@ Turn source/text files into a single Markdown document — or extract them back.
 cargo install src2md
 ```
 
-Or install from source:
+Or build from source:
 
 ```bash
 git clone https://github.com/MatiasHiltunen/src2md.git
@@ -115,6 +121,34 @@ async fn main() -> anyhow::Result<()> {
     extract_from_markdown(&PathBuf::from("out.md"), Some(&PathBuf::from("restored/"))).await
 }
 ```
+
+---
+
+## Cargo Features
+
+_Planned (not yet active):_
+
+- `highlight`: syntax highlighting with `syntect`
+- `serde`: config serialization
+- `cli-only`: trim library for tiny builds
+
+---
+
+## Changelog
+
+### v0.1.0
+- Initial release
+- CLI and library mode
+- Memory-mapped (zero-copy) file reading
+- Safe Markdown code fencing
+- Extract mode with `--extract` and `--extract-path`
+
+---
+
+## Contributors
+
+- [Matias Hiltunen](https://github.com/MatiasHiltunen) – Author  
+- You? [Submit a pull request](https://github.com/MatiasHiltunen/src2md/pulls)!
 
 ---
 
