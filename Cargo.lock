@@ -628,6 +628,7 @@ dependencies = [
  "ignore",
  "log",
  "memmap2",
+ "regex",
  "tempfile",
  "tokio",
 ]
