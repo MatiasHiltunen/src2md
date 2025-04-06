@@ -1,0 +1,18 @@
+# .release.toml
+
+sign-commit = false
+sign-tag = false
+push = true
+push-remote = "origin"
+publish = true
+allow-branch = ["main"]
+
+# Customize the tag and commit message
+tag-prefix = "v"
+tag-name = "{{version}}"
+tag-message = "Release version {{version}}"
+
+pre-release-hook = ["cargo", "test"]
+pre-release-replacements = [
+  { file = "README.md", search = "src2md = \"[^\"]+\"", replace = "src2md = \"{{version}}\"" }
+]
