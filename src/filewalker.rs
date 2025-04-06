@@ -50,7 +50,8 @@ fn is_hidden(entry: &DirEntry) -> bool {
         .path()
         .file_name()
         .and_then(|s| s.to_str())
-        .map_or(false, |s| s.starts_with('.'))
+        .is_some_and(|s| s.starts_with('.'))
+    // .map_or(false, |s| s.starts_with('.'))
 }
 
 /// Checks if a given path is part of the explicitly included paths

@@ -48,7 +48,7 @@ pub fn parse_args() -> Result<Config> {
                 .long("extract")
                 .value_name("MARKDOWN")
                 .help("Extracts code files from a Markdown file")
-                .conflicts_with_all(&["output", "ignore", "paths"]),
+                .conflicts_with_all(["output", "ignore", "paths"]),
         )
         .arg(
             Arg::new("extract-path")
