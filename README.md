@@ -1,79 +1,93 @@
-
 # src2md
 
-A CLI tool and Rust library that collects source code and text files into a single Markdown (`.md`) document with syntax highlighting.
+[![crates.io](https://img.shields.io/crates/v/src2md.svg)](https://crates.io/crates/src2md)
+[![docs.rs](https://docs.rs/src2md/badge.svg)](https://docs.rs/src2md)
+[![license](https://img.shields.io/crates/l/src2md.svg)](https://github.com/MatiasHiltunen/src2md/blob/main/LICENSE)
+
+Turn source/text files into a single Markdown document — or extract them back. Built with Rust **2024 edition**.
+
+---
 
 ## Features
 
 - Recursively scans directories to find files.
-- Supports custom ignore files (`.src2md.ignore`, `.gitignore`, or user-defined).
-- Option to include specific files or directories only.
-- Wraps code in Markdown code blocks with language tags.
-- Lists binary files by their paths without including content.
-- Zero-copy file reading using memory-mapped files (`mmap`).
-- Auto-generates output file name if not provided: `{project_folder}_content_{timestamp}.md`.
+- Supports `.src2md.ignore`, `.gitignore`, or a custom ignore file.
+- Option to include specific files or directories.
+- Wraps content in Markdown code blocks with syntax highlighting.
+- Uses dynamic backtick fencing to safely include Markdown and code.
+- Lists binary files by their paths (content omitted).
+- **Zero-copy** file reading using memory-mapped files.
+- Extracts files back from a generated Markdown file (with `--extract`).
 
 ---
 
 ## Installation
 
-### Prerequisites
+```bash
+cargo install src2md
+```
 
-- [Rust and Cargo](https://www.rust-lang.org/tools/install)
-
-### Install via Cargo
+Or install from source:
 
 ```bash
-cargo install --git https://github.com/MatiasHiltunen/src2md.git
-
-Build from Source
-
 git clone https://github.com/MatiasHiltunen/src2md.git
 cd src2md
 cargo build --release
-
-Creates an executable at target/release/src2md.
-
+```
 
 ---
 
-Usage (CLI)
+## CLI Usage
 
-./target/release/src2md [OPTIONS] [PATHS]...
+```bash
+src2md [OPTIONS] [PATHS]...
+```
 
-Options
+### Common Options
 
-Examples
+| Flag                  | Description                                                        |
+|-----------------------|--------------------------------------------------------------------|
+| `-o, --output FILE`    | Output Markdown file (default: `{project}_content_{timestamp}.md`) |
+| `-i, --ignore FILE`    | Ignore file path (`.src2md.ignore` or `.gitignore` by default)     |
+| `[PATHS]`              | Files or directories to include                                    |
+| `--extract FILE.md`    | Extracts original files from a `.md` file                          |
+| `--extract-path DIR`   | Target folder to extract files into                                |
 
-# Default usage
+### Examples
+
+```bash
+# Default: all files in current dir → Markdown
 src2md
 
 # Specify output path
-src2md -o docs/all_code.md
+src2md -o docs/code.md
 
 # Use custom ignore file
-src2md -i custom.ignore
+src2md -i .customignore
 
-# Include specific files/directories
-src2md src/main.rs src/lib.rs
+# Include only certain files
+src2md src/lib.rs src/main.rs
 
-# Combine options
-src2md -o out.md -i .gitignore src/ tests/
-
+# Extract files back from Markdown
+src2md --extract my_code.md --extract-path restored/
+```
 
 ---
 
-Usage (Library)
+## Library Usage
 
-Add to your Cargo.toml:
+Add to your `Cargo.toml`:
 
-src2md = { git = "https://github.com/MatiasHiltunen/src2md" }
+```toml
+src2md = "0.1"
+```
 
-And use it:
+### Generate Markdown
 
+```rust
 use src2md::{Config, run_src2md};
-use std::collections::HashSet;
 use std::path::PathBuf;
+use std::collections::HashSet;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -82,28 +96,28 @@ async fn main() -> anyhow::Result<()> {
         ignore_file: None,
         specific_paths: HashSet::new(),
         project_root: std::env::current_dir()?,
+        extract_input: None,
+        extract_path: None,
     };
 
     run_src2md(config).await
 }
+```
 
+### Extract Files from Markdown
 
----
+```rust
+use src2md::extract_from_markdown;
+use std::path::PathBuf;
 
-Testing
-
-cargo test
-
-Includes integration tests for file scanning and markdown generation.
-
-
----
-
-License
-
-MIT © Matias Hiltunen
-
-Contributions welcome!
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    extract_from_markdown(&PathBuf::from("out.md"), Some(&PathBuf::from("restored/"))).await
+}
+```
 
 ---
 
+## License
+
+MIT © [Matias Hiltunen](https://github.com/MatiasHiltunen)

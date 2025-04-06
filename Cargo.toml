@@ -3,12 +3,14 @@ name = "src2md"
 version = "0.1.1"
 edition = "2024"
 authors = ["Matias Hiltunen <https://github.com/MatiasHiltunen>"]
-description = "Collects code and text files into a single Markdown file"
+description = "Turn source code into a Markdown document with syntax highlighting, or extract it back."
 license = "MIT"
 repository = "https://github.com/MatiasHiltunen/src2md"
-keywords = ["markdown", "code", "cli", "extract", "tool"]
-categories = ["command-line-utilities", "development-tools"]
 readme = "README.md"
+keywords = ["markdown", "cli", "code", "extract", "docs"]
+categories = ["command-line-utilities", "development-tools", "text-processing"]
+documentation = "https://docs.rs/src2md"
+homepage = "https://github.com/MatiasHiltunen/src2md"
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }
