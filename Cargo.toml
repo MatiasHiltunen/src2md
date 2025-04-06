@@ -1,12 +1,33 @@
 [package]
 name = "src2md"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
+authors = ["Matias Hiltunen <https://github.com/MatiasHiltunen>"]
+description = "Collects code and text files into a single Markdown file"
+license = "MIT"
+repository = "https://github.com/MatiasHiltunen/src2md"
+keywords = ["markdown", "code", "cli", "extract", "tool"]
+categories = ["command-line-utilities", "development-tools"]
+readme = "README.md"
 
 [dependencies]
+clap = { version = "4", features = ["derive"] }
 ignore = "0.4"
 content_inspector = "0.2"
 memmap2 = "0.9.5"
-clap = { version = "4", features = ["derive"] }
 tokio = { version = "1", features = ["fs", "io-util", "macros", "rt-multi-thread"] }
 anyhow = "1.0"
+log = "0.4.27"
+env_logger = "0.11.8"
+chrono = "0.4.40"
+
+[lib]
+name = "src2md"
+path = "src/lib.rs"
+
+[[bin]]
+name = "src2md"
+path = "src/main.rs"
+
+[dev-dependencies]
+tempfile = "3"

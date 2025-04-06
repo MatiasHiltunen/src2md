@@ -1,7 +1,8 @@
 use anyhow::Result;
+use chrono::Utc;
 use clap::{Arg, Command};
 use std::collections::HashSet;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 pub struct Config {
     pub output_path: PathBuf,
@@ -41,10 +42,21 @@ pub fn parse_args() -> Result<Config> {
 
     let project_root = std::env::current_dir()?;
 
+    // Build dynamic default filename: {project}_content_{epoch}.md
+    let default_filename = {
+        let folder_name = project_root
+            .file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or("project");
+
+        let timestamp = Utc::now().timestamp();
+        format!("{folder_name}_content_{timestamp}.md")
+    };
+
     let output_path = matches
         .get_one::<String>("output")
         .map(PathBuf::from)
-        .unwrap_or_else(|| project_root.join("all_the_code.md"));
+        .unwrap_or_else(|| project_root.join(default_filename));
 
     let ignore_file = matches.get_one::<String>("ignore").map(PathBuf::from);
 
