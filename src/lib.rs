@@ -45,15 +45,15 @@
 //! ```
 
 pub mod cli;
-pub mod filewalker;
-pub mod writer;
-pub mod utils;
 pub mod extractor;
+pub mod filewalker;
+pub mod utils;
+pub mod writer;
 
 pub use cli::Config;
+pub use extractor::extract_from_markdown;
 pub use filewalker::collect_files;
 pub use writer::MarkdownWriter;
-pub use extractor::extract_from_markdown;
 
 use anyhow::Result;
 use tokio::fs::File;
