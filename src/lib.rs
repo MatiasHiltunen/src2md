@@ -34,23 +34,26 @@
 //! ```rust
 //! use src2md::extract_from_markdown;
 //! use std::path::PathBuf;
+//! use std::fs;
 //!
 //! #[tokio::main]
 //! async fn main() -> anyhow::Result<()> {
+//!     // Create a dummy markdown file for testing
+//!     # fs::write("output.md", "## dummy.txt\n\n```\nHello World\n```\n").unwrap();
 //!     extract_from_markdown(&PathBuf::from("output.md"), Some(&PathBuf::from("restored/"))).await
 //! }
 //! ```
 
 pub mod cli;
-pub mod extractor;
 pub mod filewalker;
-pub mod utils;
 pub mod writer;
+pub mod utils;
+pub mod extractor;
 
 pub use cli::Config;
-pub use extractor::extract_from_markdown;
 pub use filewalker::collect_files;
 pub use writer::MarkdownWriter;
+pub use extractor::extract_from_markdown;
 
 use anyhow::Result;
 use tokio::fs::File;
