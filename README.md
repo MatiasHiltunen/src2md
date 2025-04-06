@@ -1,98 +1,109 @@
+
 # src2md
 
-src2md is a command-line tool written in Rust that traverses a project directory, collects code and text files, and compiles them into a single Markdown (.md) file. It respects ignore files (like .gitignore) and allows for customization through command-line options.
-
->[!CAUTION]
->Purpose of this tool is to quickly gather the entire project's code to a single file for various purposes. It works nicely for example with [mdbook](https://rust-lang.github.io/mdBook/index.html). The tool is quite powerfull and traverses even largest projects in seconds. It is good idea to use it only with known directories as currently there is no builtin limits, even for depth of the directory. The tool also uses rust's `unsafe` code due to usage of memmap2 crate. In conclusion, do not run the tool for example in system directories, as at best it would create enormous .md file and at worst, it could break your computer for good.
+A CLI tool and Rust library that collects source code and text files into a single Markdown (`.md`) document with syntax highlighting.
 
 ## Features
 
 - Recursively scans directories to find files.
-- Supports custom ignore files, defaulting to .src2md.ignore or .gitignore.
-- Option to include specific files or directories.
-- Wraps code in Markdown code blocks with appropriate language tags for syntax highlighting.
+- Supports custom ignore files (`.src2md.ignore`, `.gitignore`, or user-defined).
+- Option to include specific files or directories only.
+- Wraps code in Markdown code blocks with language tags.
 - Lists binary files by their paths without including content.
-- Zero-Copy File Reading, uses memory-mapped files for efficient file reading.
+- Zero-copy file reading using memory-mapped files (`mmap`).
+- Auto-generates output file name if not provided: `{project_folder}_content_{timestamp}.md`.
 
+---
 
 ## Installation
 
 ### Prerequisites
 
-Ensure you have Rust and Cargo installed.
+- [Rust and Cargo](https://www.rust-lang.org/tools/install)
 
-To install src2md with cargo, run command:
-```sh
+### Install via Cargo
+
+```bash
 cargo install --git https://github.com/MatiasHiltunen/src2md.git
-```
 
-### Build from Source
+Build from Source
 
-Clone the repository and build the project:
-```sh
-git clone https://github.com/yourusername/src2md.git
+git clone https://github.com/MatiasHiltunen/src2md.git
 cd src2md
 cargo build --release
-```
-  
-This will create an executable in target/release/src2md.
 
-## Usage
+Creates an executable at target/release/src2md.
 
-Run the src2md executable with various options:
+
+---
+
+Usage (CLI)
 
 ./target/release/src2md [OPTIONS] [PATHS]...
 
-### Command-Line Options
+Options
 
--o, --output <FILE>: Sets the output .md file path. Defaults to all_the_code.md in the current directory.
+Examples
 
--i, --ignore <FILE>: Sets the ignore file path. If not specified, it tries to use .src2md.ignore or .gitignore.
+# Default usage
+src2md
 
-[PATHS]: Specific files or directories to include. If provided, only these paths are processed.
+# Specify output path
+src2md -o docs/all_code.md
+
+# Use custom ignore file
+src2md -i custom.ignore
+
+# Include specific files/directories
+src2md src/main.rs src/lib.rs
+
+# Combine options
+src2md -o out.md -i .gitignore src/ tests/
 
 
-### Examples
+---
 
-Default Usage
+Usage (Library)
 
-Collect all code and text files in the current directory and output to all_the_code.md:
-```sh
-./target/release/src2md
-```
+Add to your Cargo.toml:
 
-Specify Output File Path
+src2md = { git = "https://github.com/MatiasHiltunen/src2md" }
 
-Output to a custom file path:
-```sh
-./target/release/src2md -o docs/all_code.md
-```
-Use Custom Ignore File
+And use it:
 
-Use a custom ignore file instead of .src2md.ignore or .gitignore:
-```sh
-./target/release/src2md -i custom.ignore
-```
-Include Specific Files or Directories
+use src2md::{Config, run_src2md};
+use std::collections::HashSet;
+use std::path::PathBuf;
 
-Process only specific files or directories:
-```sh
-./target/release/src2md src/main.rs src/lib.rs
-```
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    let config = Config {
+        output_path: PathBuf::from("out.md"),
+        ignore_file: None,
+        specific_paths: HashSet::new(),
+        project_root: std::env::current_dir()?,
+    };
 
-Combine Options
+    run_src2md(config).await
+}
 
-Combine multiple options:
-```sh
-./target/release/src2md -o code.md -i custom.ignore src/ tests/test_main.rs
-```
 
-The ignore file follows the same syntax as .gitignore.
+---
 
-### Handling Multiple Runs
+Testing
 
-By default, src2md overwrites the output file each time it runs. If you need to append to the existing file or keep backups, consider modifying the file handling logic in the code or incorporate versioning in your workflow.
+cargo test
 
-## Contributing
+Includes integration tests for file scanning and markdown generation.
 
-Contributions are welcome! Feel free to open issues or submit pull requests on GitHub.
+
+---
+
+License
+
+MIT © Matias Hiltunen
+
+Contributions welcome!
+
+---
+
