@@ -18,6 +18,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - `--fail-fast` flag to stop on first error
 - Cross-platform release binaries (Linux, macOS, Windows)
 - SHA256 checksums for release artifacts
+- `restore` feature flag for restore/extract functionality (enabled by default)
 
 ### Changed
 
@@ -25,6 +26,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Renamed `-i, --ignore` to `--ignore-file` to avoid confusion with "include"
 - Improved CI pipeline with cross-platform testing
 - Added MSRV (Minimum Supported Rust Version) of 1.85
+- Both `git` and `restore` features are now enabled by default
+- Library users can disable default features for minimal dependencies
 
 ### Fixed
 

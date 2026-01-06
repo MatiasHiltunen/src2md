@@ -15,8 +15,10 @@ pub struct Config {
     /// Root directory to process.
     pub project_root: PathBuf,
     /// If set, restore files from this markdown file instead of generating.
+    #[cfg(feature = "restore")]
     pub restore_input: Option<PathBuf>,
     /// Target directory for restoration.
+    #[cfg(feature = "restore")]
     pub restore_path: Option<PathBuf>,
     /// Verbosity level (0-3).
     pub verbosity: u8,
@@ -34,7 +36,7 @@ pub struct Config {
 }
 
 /// Parses command-line arguments and returns a Config.
-#[allow(unused_mut)] // mut is needed when git feature is enabled
+#[allow(unused_mut)] // mut is needed when features are enabled
 pub fn parse_args() -> Result<Config> {
     let mut cmd = Command::new("src2md")
         .version(env!("CARGO_PKG_VERSION"))
@@ -77,36 +79,47 @@ pub fn parse_args() -> Result<Config> {
                 .num_args(1),
         )
         .arg(
-            Arg::new("restore")
-                .long("restore")
-                .value_name("MARKDOWN")
-                .help("Restore files from a src2md Markdown file back to filesystem")
-                .conflicts_with_all(["output", "ignore-file", "paths", "ext"]),
-        )
-        .arg(
-            Arg::new("restore-path")
-                .long("restore-path")
-                .value_name("DIR")
-                .help("Target directory to restore files into (preserves relative paths)")
-                .requires("restore"),
-        )
-        .arg(
             Arg::new("fail-fast")
                 .long("fail-fast")
                 .help("Stop processing on first error instead of continuing")
                 .action(clap::ArgAction::SetTrue),
         );
 
+    // Add restore-specific arguments when the feature is enabled
+    #[cfg(feature = "restore")]
+    {
+        cmd = cmd
+            .arg(
+                Arg::new("restore")
+                    .long("restore")
+                    .value_name("MARKDOWN")
+                    .help("Restore files from a src2md Markdown file back to filesystem")
+                    .conflicts_with_all(["output", "ignore-file", "paths", "ext"]),
+            )
+            .arg(
+                Arg::new("restore-path")
+                    .long("restore-path")
+                    .value_name("DIR")
+                    .help("Target directory to restore files into (preserves relative paths)")
+                    .requires("restore"),
+            );
+    }
+
     // Add git-specific arguments when the feature is enabled
     #[cfg(feature = "git")]
     {
+        let conflicts: &[&str] = if cfg!(feature = "restore") {
+            &["restore", "paths"]
+        } else {
+            &["paths"]
+        };
         cmd = cmd
             .arg(
                 Arg::new("git")
                     .long("git")
                     .value_name("URL")
                     .help("Clone a git repository and generate markdown from it")
-                    .conflicts_with_all(["restore", "paths"]),
+                    .conflicts_with_all(conflicts),
             )
             .arg(
                 Arg::new("branch")
@@ -139,6 +152,7 @@ pub fn parse_args() -> Result<Config> {
         .unwrap_or_default();
 
     // Handle restore mode
+    #[cfg(feature = "restore")]
     if let Some(md_path) = matches.get_one::<String>("restore") {
         let restore_path = matches.get_one::<String>("restore-path").map(PathBuf::from);
         return Ok(Config {
@@ -185,7 +199,9 @@ pub fn parse_args() -> Result<Config> {
             ignore_file,
             specific_paths: HashSet::new(),
             project_root: PathBuf::new(), // Will be set after cloning
+            #[cfg(feature = "restore")]
             restore_input: None,
+            #[cfg(feature = "restore")]
             restore_path: None,
             verbosity,
             fail_fast: matches.get_flag("fail-fast"),
@@ -223,7 +239,9 @@ pub fn parse_args() -> Result<Config> {
         ignore_file,
         specific_paths,
         project_root,
+        #[cfg(feature = "restore")]
         restore_input: None,
+        #[cfg(feature = "restore")]
         restore_path: None,
         verbosity,
         fail_fast: matches.get_flag("fail-fast"),

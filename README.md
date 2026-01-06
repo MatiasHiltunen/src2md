@@ -80,6 +80,30 @@ Options:
 
 ## Library Usage
 
+Add to your `Cargo.toml`:
+
+```toml
+[dependencies]
+src2md = "0.1"
+```
+
+### Feature Flags
+
+Both features are enabled by default:
+
+| Feature   | Description                                    |
+|-----------|------------------------------------------------|
+| `restore` | Enables `--restore` flag and `extract_from_markdown` API |
+| `git`     | Enables `--git <URL>` to clone and process repositories |
+
+To use only the core bundling functionality:
+
+```toml
+src2md = { version = "0.1", default-features = false }
+```
+
+### Example
+
 ```rust
 use src2md::{Config, run_src2md};
 use std::collections::HashSet;
@@ -93,10 +117,16 @@ async fn main() -> anyhow::Result<()> {
         ignore_file: None,
         specific_paths: HashSet::new(),
         extensions: HashSet::new(),
+        #[cfg(feature = "restore")]
         restore_input: None,
+        #[cfg(feature = "restore")]
         restore_path: None,
         verbosity: 0,
         fail_fast: false,
+        #[cfg(feature = "git")]
+        git_url: None,
+        #[cfg(feature = "git")]
+        git_branch: None,
     };
     
     run_src2md(config).await

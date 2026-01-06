@@ -3,12 +3,18 @@
 //! This crate can be used to:
 //!
 //! - Collect all source/text files from a project and compile them into a Markdown file
-//! - Restore original source files back from a generated Markdown file
-//! - Clone and process git repositories (with the `git` feature)
+//! - Restore original source files back from a generated Markdown file (requires `restore` feature)
+//! - Clone and process git repositories (requires `git` feature)
 //!
 //! ## Features
 //!
-//! - `git` - Enables git repository cloning support via `--git <url>`
+//! - `restore` (default) - Enables restoring files from Markdown via `--restore`
+//! - `git` (default) - Enables git repository cloning support via `--git <url>`
+//!
+//! To use only the core bundling functionality without restore or git:
+//! ```toml
+//! src2md = { version = "0.1", default-features = false }
+//! ```
 //!
 //! ## Default Exclusions
 //!
@@ -33,11 +39,13 @@
 //!         ignore_file: None,
 //!         specific_paths: HashSet::new(),
 //!         project_root: std::env::current_dir()?,
+//!         #[cfg(feature = "restore")]
 //!         restore_input: None,
+//!         #[cfg(feature = "restore")]
 //!         restore_path: None,
 //!         verbosity: 0,
 //!         fail_fast: true,
-//!         extensions: HashSet::new(), // empty = include all
+//!         extensions: HashSet::new(),
 //!         #[cfg(feature = "git")]
 //!         git_url: None,
 //!         #[cfg(feature = "git")]
@@ -47,23 +55,9 @@
 //!     run_src2md(config).await
 //! }
 //! ```
-//!
-//! ### To restore files from a Markdown file:
-//!
-//! ```rust,no_run
-//! use src2md::extract_from_markdown;
-//! use std::path::PathBuf;
-//!
-//! #[tokio::main]
-//! async fn main() -> anyhow::Result<()> {
-//!     extract_from_markdown(
-//!         &PathBuf::from("generated.md"),
-//!         Some(&PathBuf::from("restored/")),
-//!     ).await
-//! }
-//! ```
 
 pub mod cli;
+#[cfg(feature = "restore")]
 pub mod extractor;
 pub mod filewalker;
 pub mod utils;
@@ -73,6 +67,7 @@ pub mod writer;
 pub mod git;
 
 pub use cli::Config;
+#[cfg(feature = "restore")]
 pub use extractor::extract_from_markdown;
 pub use filewalker::collect_files;
 pub use writer::{MarkdownWriter, OUTPUT_MAGIC_BYTES, OUTPUT_MAGIC_HEADER};

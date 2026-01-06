@@ -1,6 +1,7 @@
 use anyhow::Result;
 use log::{LevelFilter, error, info};
 use src2md::cli::parse_args;
+#[cfg(feature = "restore")]
 use src2md::extractor::extract_from_markdown;
 use src2md::filewalker::collect_files;
 use src2md::writer::MarkdownWriter;
@@ -27,7 +28,8 @@ async fn main() -> Result<()> {
     let config = parse_args()?;
     init_logger(config.verbosity);
 
-    // Handle restore mode
+    // Handle restore mode (requires feature)
+    #[cfg(feature = "restore")]
     if let Some(input) = &config.restore_input {
         info!("Restoring files from: {}", input.display());
         extract_from_markdown(input, config.restore_path.as_ref()).await?;

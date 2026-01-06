@@ -1,4 +1,6 @@
-use src2md::{Config, OUTPUT_MAGIC_HEADER, extract_from_markdown, run_src2md};
+#[cfg(feature = "restore")]
+use src2md::extract_from_markdown;
+use src2md::{Config, OUTPUT_MAGIC_HEADER, run_src2md};
 use std::collections::HashSet;
 use std::fs::File;
 use std::io::Write;
@@ -12,7 +14,9 @@ fn test_config(output_path: std::path::PathBuf, project_root: std::path::PathBuf
         ignore_file: None,
         specific_paths: HashSet::new(),
         project_root,
+        #[cfg(feature = "restore")]
         restore_input: None,
+        #[cfg(feature = "restore")]
         restore_path: None,
         verbosity: 0,
         fail_fast: true,
@@ -35,7 +39,9 @@ fn test_config_with_paths(
         ignore_file: None,
         specific_paths,
         project_root,
+        #[cfg(feature = "restore")]
         restore_input: None,
+        #[cfg(feature = "restore")]
         restore_path: None,
         verbosity: 0,
         fail_fast: true,
@@ -58,7 +64,9 @@ fn test_config_with_extensions(
         ignore_file: None,
         specific_paths: HashSet::new(),
         project_root,
+        #[cfg(feature = "restore")]
         restore_input: None,
+        #[cfg(feature = "restore")]
         restore_path: None,
         verbosity: 0,
         fail_fast: true,
@@ -118,6 +126,7 @@ async fn it_handles_files_with_backticks() -> anyhow::Result<()> {
     Ok(())
 }
 
+#[cfg(feature = "restore")]
 #[tokio::test]
 async fn it_roundtrips_files() -> anyhow::Result<()> {
     let temp_dir = tempdir()?;
