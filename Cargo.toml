@@ -14,9 +14,10 @@ documentation = "https://docs.rs/src2md"
 homepage = "https://github.com/MatiasHiltunen/src2md"
 
 [features]
-default = ["restore", "git"]
+default = ["restore", "git", "mdbook"]
 restore = ["dep:regex", "dep:once_cell"]
 git = ["dep:git2", "dep:tempfile"]
+mdbook = []
 
 [dependencies]
 clap = { version = "4.5.54", features = ["derive"] }

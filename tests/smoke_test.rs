@@ -25,6 +25,8 @@ fn test_config(output_path: std::path::PathBuf, project_root: std::path::PathBuf
         git_url: None,
         #[cfg(feature = "git")]
         git_branch: None,
+        #[cfg(feature = "mdbook")]
+        mdbook_output: None,
     }
 }
 
@@ -50,6 +52,8 @@ fn test_config_with_paths(
         git_url: None,
         #[cfg(feature = "git")]
         git_branch: None,
+        #[cfg(feature = "mdbook")]
+        mdbook_output: None,
     }
 }
 
@@ -75,6 +79,8 @@ fn test_config_with_extensions(
         git_url: None,
         #[cfg(feature = "git")]
         git_branch: None,
+        #[cfg(feature = "mdbook")]
+        mdbook_output: None,
     }
 }
 
@@ -514,5 +520,131 @@ mod git_tests {
             repo_name_from_url("git@github.com:user/repo.git"),
             Some("repo".to_string())
         );
+    }
+}
+
+// mdbook feature tests (only compiled when mdbook feature is enabled)
+#[cfg(feature = "mdbook")]
+mod mdbook_tests {
+    use src2md::filewalker::collect_files;
+    use src2md::generate_mdbook;
+    use std::collections::HashSet;
+    use tempfile::tempdir;
+    use tokio::fs;
+
+    #[tokio::test]
+    async fn it_generates_mdbook_structure() -> anyhow::Result<()> {
+        let temp_dir = tempdir()?;
+        let root_path = temp_dir.path().to_path_buf();
+
+        // Create source files
+        std::fs::write(root_path.join("README.md"), "# Project README")?;
+
+        let src_dir = root_path.join("src");
+        std::fs::create_dir_all(&src_dir)?;
+        std::fs::write(src_dir.join("main.rs"), "fn main() {}")?;
+        std::fs::write(src_dir.join("lib.rs"), "pub fn hello() {}")?;
+
+        // Output directory
+        let output_dir = root_path.join("book");
+
+        // Collect files and generate mdbook
+        let entries = collect_files(&root_path, None, &HashSet::new(), None, &HashSet::new())?;
+        generate_mdbook(&entries, &root_path, &output_dir).await?;
+
+        // Verify SUMMARY.md exists
+        let summary_path = output_dir.join("SUMMARY.md");
+        assert!(summary_path.exists(), "SUMMARY.md should exist");
+
+        let summary = fs::read_to_string(&summary_path).await?;
+        assert!(summary.contains("# Summary"), "Should have Summary header");
+        assert!(
+            summary.contains("[Introduction]"),
+            "Should have Introduction link"
+        );
+        assert!(summary.contains("[src]"), "Should have src chapter");
+
+        // Verify introduction.md (root files)
+        let intro_path = output_dir.join("introduction.md");
+        assert!(intro_path.exists(), "introduction.md should exist");
+        let intro = fs::read_to_string(&intro_path).await?;
+        assert!(
+            intro.contains("# Introduction"),
+            "Should have Introduction header"
+        );
+        assert!(
+            intro.contains("README.md"),
+            "Should contain README.md section"
+        );
+
+        // Verify src.md (src folder files)
+        let src_md_path = output_dir.join("src.md");
+        assert!(src_md_path.exists(), "src.md should exist");
+        let src_md = fs::read_to_string(&src_md_path).await?;
+        assert!(src_md.contains("## main.rs"), "Should have main.rs section");
+        assert!(src_md.contains("## lib.rs"), "Should have lib.rs section");
+        assert!(
+            src_md.contains("fn main()"),
+            "Should contain main.rs content"
+        );
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn it_handles_nested_directories() -> anyhow::Result<()> {
+        let temp_dir = tempdir()?;
+        let root_path = temp_dir.path().to_path_buf();
+
+        // Create nested structure
+        let utils_dir = root_path.join("src").join("utils");
+        std::fs::create_dir_all(&utils_dir)?;
+        std::fs::write(root_path.join("src").join("main.rs"), "// main")?;
+        std::fs::write(utils_dir.join("helpers.rs"), "// helpers")?;
+
+        let output_dir = root_path.join("book");
+
+        let entries = collect_files(&root_path, None, &HashSet::new(), None, &HashSet::new())?;
+        generate_mdbook(&entries, &root_path, &output_dir).await?;
+
+        // Verify nested chapter exists
+        let summary = fs::read_to_string(output_dir.join("SUMMARY.md")).await?;
+        assert!(summary.contains("[src]"), "Should have src chapter");
+        assert!(summary.contains("[utils]"), "Should have utils sub-chapter");
+
+        // Verify src/utils.md exists with proper nesting
+        let utils_md = output_dir.join("src").join("utils.md");
+        assert!(utils_md.exists(), "src/utils.md should exist");
+        let utils_content = fs::read_to_string(&utils_md).await?;
+        assert!(
+            utils_content.contains("helpers.rs"),
+            "Should have helpers.rs"
+        );
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn it_handles_binary_files_in_mdbook() -> anyhow::Result<()> {
+        let temp_dir = tempdir()?;
+        let root_path = temp_dir.path().to_path_buf();
+
+        // Create a binary file
+        let binary_content: Vec<u8> = vec![0x00, 0x01, 0x02, 0xFF, 0xFE];
+        std::fs::write(root_path.join("binary.bin"), &binary_content)?;
+
+        let output_dir = root_path.join("book");
+
+        let entries = collect_files(&root_path, None, &HashSet::new(), None, &HashSet::new())?;
+        generate_mdbook(&entries, &root_path, &output_dir).await?;
+
+        let intro = fs::read_to_string(output_dir.join("introduction.md")).await?;
+        assert!(intro.contains("binary.bin"), "Should list binary file");
+        assert!(
+            intro.contains("(binary file omitted)"),
+            "Should mark as binary"
+        );
+
+        Ok(())
     }
 }

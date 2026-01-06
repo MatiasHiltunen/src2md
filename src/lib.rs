@@ -2,16 +2,18 @@
 //!
 //! This crate can be used to:
 //!
-//! - Collect all source/text files from a project and compile them into a Markdown file
+//! - Collect all source/text files under given path and compile them into a Markdown file
 //! - Restore original source files back from a generated Markdown file (requires `restore` feature)
 //! - Clone and process git repositories (requires `git` feature)
+//! - Generate mdbook-compatible output (requires `mdbook` feature)
 //!
 //! ## Features
 //!
 //! - `restore` (default) - Enables restoring files from Markdown via `--restore`
 //! - `git` (default) - Enables git repository cloning support via `--git <url>`
+//! - `mdbook` (default) - Enables mdbook format output via `--mdbook <dir>`
 //!
-//! To use only the core bundling functionality without restore or git:
+//! To use only the core bundling functionality without optional features:
 //! ```toml
 //! src2md = { version = "0.1", default-features = false }
 //! ```
@@ -50,6 +52,8 @@
 //!         git_url: None,
 //!         #[cfg(feature = "git")]
 //!         git_branch: None,
+//!         #[cfg(feature = "mdbook")]
+//!         mdbook_output: None,
 //!     };
 //!
 //!     run_src2md(config).await
@@ -66,6 +70,9 @@ pub mod writer;
 #[cfg(feature = "git")]
 pub mod git;
 
+#[cfg(feature = "mdbook")]
+pub mod mdbook;
+
 pub use cli::Config;
 #[cfg(feature = "restore")]
 pub use extractor::extract_from_markdown;
@@ -74,6 +81,9 @@ pub use writer::{MarkdownWriter, OUTPUT_MAGIC_BYTES, OUTPUT_MAGIC_HEADER};
 
 #[cfg(feature = "git")]
 pub use git::{ClonedRepo, clone_repository, repo_name_from_url};
+
+#[cfg(feature = "mdbook")]
+pub use mdbook::generate_mdbook;
 
 use anyhow::Result;
 use log::error;

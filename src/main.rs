@@ -4,6 +4,8 @@ use src2md::cli::parse_args;
 #[cfg(feature = "restore")]
 use src2md::extractor::extract_from_markdown;
 use src2md::filewalker::collect_files;
+#[cfg(feature = "mdbook")]
+use src2md::mdbook::generate_mdbook;
 use src2md::writer::MarkdownWriter;
 use tokio::fs::File;
 use tokio::io::BufWriter;
@@ -41,6 +43,12 @@ async fn main() -> Result<()> {
     #[cfg(feature = "git")]
     if let Some(ref git_url) = config.git_url {
         return run_git_mode(&config, git_url).await;
+    }
+
+    // Handle mdbook mode (requires feature)
+    #[cfg(feature = "mdbook")]
+    if let Some(ref output_dir) = config.mdbook_output {
+        return run_mdbook_mode(&config, output_dir).await;
     }
 
     // Standard mode: process local directory
@@ -140,5 +148,30 @@ async fn run_git_mode(config: &src2md::Config, git_url: &str) -> Result<()> {
     // The cloned repo is automatically cleaned up when `cloned` is dropped
     info!("Cleaned up temporary clone");
 
+    Ok(())
+}
+
+/// Generate mdbook format output from a local directory.
+#[cfg(feature = "mdbook")]
+async fn run_mdbook_mode(config: &src2md::Config, output_dir: &std::path::Path) -> Result<()> {
+    info!("Output directory: {}", output_dir.display());
+
+    if !config.extensions.is_empty() {
+        info!("Filtering by extensions: {:?}", config.extensions);
+    }
+
+    let entries = collect_files(
+        &config.project_root,
+        config.ignore_file.as_ref(),
+        &config.specific_paths,
+        None, // No single output file to exclude
+        &config.extensions,
+    )?;
+
+    info!("Processing {} files into mdbook format", entries.len());
+
+    generate_mdbook(&entries, &config.project_root, output_dir).await?;
+
+    info!("Done: {}", output_dir.display());
     Ok(())
 }

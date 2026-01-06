@@ -33,6 +33,9 @@ pub struct Config {
     /// Git branch to checkout (requires `git` feature).
     #[cfg(feature = "git")]
     pub git_branch: Option<String>,
+    /// Output directory for mdbook format (requires `mdbook` feature).
+    #[cfg(feature = "mdbook")]
+    pub mdbook_output: Option<PathBuf>,
 }
 
 /// Parses command-line arguments and returns a Config.
@@ -131,6 +134,24 @@ pub fn parse_args() -> Result<Config> {
             );
     }
 
+    // Add mdbook-specific arguments when the feature is enabled
+    #[cfg(feature = "mdbook")]
+    {
+        let mut conflicts = vec!["output"];
+        #[cfg(feature = "restore")]
+        conflicts.push("restore");
+        #[cfg(feature = "git")]
+        conflicts.push("git");
+
+        cmd = cmd.arg(
+            Arg::new("mdbook")
+                .long("mdbook")
+                .value_name("DIR")
+                .help("Generate mdbook format output to the specified directory")
+                .conflicts_with_all(conflicts),
+        );
+    }
+
     let matches = cmd.get_matches();
 
     let verbosity = matches.get_count("verbose");
@@ -169,6 +190,8 @@ pub fn parse_args() -> Result<Config> {
             git_url: None,
             #[cfg(feature = "git")]
             git_branch: None,
+            #[cfg(feature = "mdbook")]
+            mdbook_output: None,
         });
     }
 
@@ -208,6 +231,38 @@ pub fn parse_args() -> Result<Config> {
             extensions,
             git_url: Some(git_url.clone()),
             git_branch,
+            #[cfg(feature = "mdbook")]
+            mdbook_output: None,
+        });
+    }
+
+    // Handle mdbook mode
+    #[cfg(feature = "mdbook")]
+    if let Some(mdbook_dir) = matches.get_one::<String>("mdbook") {
+        let project_root = std::env::current_dir()?;
+        let ignore_file = matches.get_one::<String>("ignore-file").map(PathBuf::from);
+        let specific_paths: HashSet<_> = matches
+            .get_many::<String>("paths")
+            .map(|vals| vals.map(|s| project_root.join(s)).collect())
+            .unwrap_or_default();
+
+        return Ok(Config {
+            output_path: PathBuf::new(), // Not used in mdbook mode
+            ignore_file,
+            specific_paths,
+            project_root,
+            #[cfg(feature = "restore")]
+            restore_input: None,
+            #[cfg(feature = "restore")]
+            restore_path: None,
+            verbosity,
+            fail_fast: matches.get_flag("fail-fast"),
+            extensions,
+            #[cfg(feature = "git")]
+            git_url: None,
+            #[cfg(feature = "git")]
+            git_branch: None,
+            mdbook_output: Some(PathBuf::from(mdbook_dir)),
         });
     }
 
@@ -250,5 +305,7 @@ pub fn parse_args() -> Result<Config> {
         git_url: None,
         #[cfg(feature = "git")]
         git_branch: None,
+        #[cfg(feature = "mdbook")]
+        mdbook_output: None,
     })
 }
