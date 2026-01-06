@@ -594,17 +594,15 @@ mod tests {
         let mut hidden_found = false;
 
         let walker = ignore::WalkBuilder::new(root).hidden(false).build();
-        for result in walker {
-            if let Ok(entry) = result {
-                if entry.path().is_file() {
-                    let file_name = entry.file_name().to_string_lossy();
-                    if file_name == "visible.rs" {
-                        assert!(!is_hidden(&entry));
-                        visible_found = true;
-                    } else if file_name == ".hidden" {
-                        assert!(is_hidden(&entry));
-                        hidden_found = true;
-                    }
+        for entry in walker.flatten() {
+            if entry.path().is_file() {
+                let file_name = entry.file_name().to_string_lossy();
+                if file_name == "visible.rs" {
+                    assert!(!is_hidden(&entry));
+                    visible_found = true;
+                } else if file_name == ".hidden" {
+                    assert!(is_hidden(&entry));
+                    hidden_found = true;
                 }
             }
         }
