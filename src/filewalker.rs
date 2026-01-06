@@ -346,13 +346,17 @@ mod tests {
 
         assert_eq!(entries.len(), 2);
         let paths: Vec<_> = entries.iter().map(|e| e.path().to_path_buf()).collect();
-        assert!(paths
-            .iter()
-            .any(|p| p.to_string_lossy().contains("source.rs")));
+        assert!(
+            paths
+                .iter()
+                .any(|p| p.to_string_lossy().contains("source.rs"))
+        );
         assert!(paths.iter().any(|p| p.to_string_lossy().contains("app.ts")));
-        assert!(!paths
-            .iter()
-            .any(|p| p.to_string_lossy().contains("package-lock")));
+        assert!(
+            !paths
+                .iter()
+                .any(|p| p.to_string_lossy().contains("package-lock"))
+        );
         Ok(())
     }
 
@@ -374,16 +378,22 @@ mod tests {
 
         assert_eq!(entries.len(), 2);
         let paths: Vec<_> = entries.iter().map(|e| e.path().to_path_buf()).collect();
-        assert!(paths
-            .iter()
-            .any(|p| p.to_string_lossy().contains("main.rs")));
+        assert!(
+            paths
+                .iter()
+                .any(|p| p.to_string_lossy().contains("main.rs"))
+        );
         assert!(paths.iter().any(|p| p.to_string_lossy().contains("app.ts")));
-        assert!(!paths
-            .iter()
-            .any(|p| p.to_string_lossy().contains("style.css")));
-        assert!(!paths
-            .iter()
-            .any(|p| p.to_string_lossy().contains("readme.md")));
+        assert!(
+            !paths
+                .iter()
+                .any(|p| p.to_string_lossy().contains("style.css"))
+        );
+        assert!(
+            !paths
+                .iter()
+                .any(|p| p.to_string_lossy().contains("readme.md"))
+        );
         Ok(())
     }
 
@@ -455,7 +465,13 @@ mod tests {
         let output_path = root.join("output.md");
         fs::write(&output_path, "# Output")?;
 
-        let entries = collect_files(root, None, &HashSet::new(), Some(&output_path), &HashSet::new())?;
+        let entries = collect_files(
+            root,
+            None,
+            &HashSet::new(),
+            Some(&output_path),
+            &HashSet::new(),
+        )?;
 
         assert_eq!(entries.len(), 1);
         assert!(entries[0].path().to_string_lossy().contains("source.rs"));
@@ -504,15 +520,21 @@ mod tests {
         // Should include source.rs and readme.md but not generated.md
         assert_eq!(entries.len(), 2);
         let paths: Vec<_> = entries.iter().map(|e| e.path().to_path_buf()).collect();
-        assert!(paths
-            .iter()
-            .any(|p| p.to_string_lossy().contains("source.rs")));
-        assert!(paths
-            .iter()
-            .any(|p| p.to_string_lossy().contains("readme.md")));
-        assert!(!paths
-            .iter()
-            .any(|p| p.to_string_lossy().contains("generated.md")));
+        assert!(
+            paths
+                .iter()
+                .any(|p| p.to_string_lossy().contains("source.rs"))
+        );
+        assert!(
+            paths
+                .iter()
+                .any(|p| p.to_string_lossy().contains("readme.md"))
+        );
+        assert!(
+            !paths
+                .iter()
+                .any(|p| p.to_string_lossy().contains("generated.md"))
+        );
         Ok(())
     }
 
@@ -604,9 +626,6 @@ mod tests {
         assert!(has_matching_extension(Path::new("FILE.RS"), &extensions)); // case insensitive
 
         assert!(!has_matching_extension(Path::new("style.css"), &extensions));
-        assert!(!has_matching_extension(
-            Path::new("README"),
-            &extensions
-        )); // no extension
+        assert!(!has_matching_extension(Path::new("README"), &extensions)); // no extension
     }
 }

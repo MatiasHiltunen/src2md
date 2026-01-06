@@ -1,6 +1,6 @@
 use crate::utils::get_language_tag;
 use anyhow::{Context, Result};
-use content_inspector::{inspect, ContentType};
+use content_inspector::{ContentType, inspect};
 use ignore::DirEntry;
 use log::debug;
 use memmap2::MmapOptions;

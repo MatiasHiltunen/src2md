@@ -1,5 +1,5 @@
 use anyhow::Result;
-use log::{error, info, LevelFilter};
+use log::{LevelFilter, error, info};
 use src2md::cli::parse_args;
 use src2md::extractor::extract_from_markdown;
 use src2md::filewalker::collect_files;

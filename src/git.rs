@@ -15,7 +15,7 @@
 //! ```
 
 use anyhow::{Context, Result};
-use git2::{build::RepoBuilder, FetchOptions, RemoteCallbacks};
+use git2::{FetchOptions, RemoteCallbacks, build::RepoBuilder};
 use log::{debug, info};
 use std::path::PathBuf;
 use tempfile::TempDir;
@@ -181,4 +181,3 @@ mod tests {
         assert_eq!(repo_name_from_url(""), None);
     }
 }
-

@@ -127,7 +127,12 @@ pub fn parse_args() -> Result<Config> {
         .get_one::<String>("ext")
         .map(|s| {
             s.split(',')
-                .map(|ext| ext.trim().to_lowercase().trim_start_matches('.').to_string())
+                .map(|ext| {
+                    ext.trim()
+                        .to_lowercase()
+                        .trim_start_matches('.')
+                        .to_string()
+                })
                 .filter(|ext| !ext.is_empty())
                 .collect()
         })
@@ -135,9 +140,7 @@ pub fn parse_args() -> Result<Config> {
 
     // Handle restore mode
     if let Some(md_path) = matches.get_one::<String>("restore") {
-        let restore_path = matches
-            .get_one::<String>("restore-path")
-            .map(PathBuf::from);
+        let restore_path = matches.get_one::<String>("restore-path").map(PathBuf::from);
         return Ok(Config {
             output_path: PathBuf::new(),
             ignore_file: None,
@@ -175,9 +178,7 @@ pub fn parse_args() -> Result<Config> {
                     .join(default_filename)
             });
 
-        let ignore_file = matches
-            .get_one::<String>("ignore-file")
-            .map(PathBuf::from);
+        let ignore_file = matches.get_one::<String>("ignore-file").map(PathBuf::from);
 
         return Ok(Config {
             output_path,
@@ -210,9 +211,7 @@ pub fn parse_args() -> Result<Config> {
         .map(PathBuf::from)
         .unwrap_or_else(|| project_root.join(default_filename));
 
-    let ignore_file = matches
-        .get_one::<String>("ignore-file")
-        .map(PathBuf::from);
+    let ignore_file = matches.get_one::<String>("ignore-file").map(PathBuf::from);
 
     let specific_paths: HashSet<_> = matches
         .get_many::<String>("paths")

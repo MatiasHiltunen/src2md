@@ -1,4 +1,4 @@
-use src2md::{extract_from_markdown, Config, run_src2md, OUTPUT_MAGIC_HEADER};
+use src2md::{Config, OUTPUT_MAGIC_HEADER, extract_from_markdown, run_src2md};
 use std::collections::HashSet;
 use std::fs::File;
 use std::io::Write;

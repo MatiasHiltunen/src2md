@@ -78,7 +78,7 @@ pub use filewalker::collect_files;
 pub use writer::{MarkdownWriter, OUTPUT_MAGIC_BYTES, OUTPUT_MAGIC_HEADER};
 
 #[cfg(feature = "git")]
-pub use git::{clone_repository, repo_name_from_url, ClonedRepo};
+pub use git::{ClonedRepo, clone_repository, repo_name_from_url};
 
 use anyhow::Result;
 use log::error;
