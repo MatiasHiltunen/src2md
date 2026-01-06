@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.6] - 2026-01-06
+
+### Added
+
+- `--mdbook <DIR>` flag to generate mdbook-compatible output
+- `mdbook` feature flag for mdbook format output (enabled by default)
+- Each folder becomes a chapter, each file becomes a section
+- Nested folders become nested chapters with proper SUMMARY.md structure
+
 ## [0.1.5] - 2026-01-06
 
 ### Added
@@ -19,8 +28,6 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Cross-platform release binaries (Linux, macOS, Windows)
 - SHA256 checksums for release artifacts
 - `restore` feature flag for restore/extract functionality (enabled by default)
-- `--mdbook <DIR>` flag to generate mdbook-compatible output (requires `mdbook` feature)
-- `mdbook` feature flag for mdbook format output (enabled by default)
 
 ### Changed
 
@@ -28,7 +35,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Renamed `-i, --ignore` to `--ignore-file` to avoid confusion with "include"
 - Improved CI pipeline with cross-platform testing
 - Added MSRV (Minimum Supported Rust Version) of 1.85
-- All optional features (`git`, `restore`, `mdbook`) are now enabled by default
+- All optional features (`git`, `restore`) are now enabled by default
 - Library users can disable default features for minimal dependencies
 
 ### Fixed
@@ -66,6 +73,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Binary file detection and placeholder output
 - Custom ignore file support
 
+[0.1.6]: https://github.com/MatiasHiltunen/src2md/compare/v0.1.5...v0.1.6
 [0.1.5]: https://github.com/MatiasHiltunen/src2md/compare/v0.1.4...v0.1.5
 [0.1.4]: https://github.com/MatiasHiltunen/src2md/compare/v0.1.1...v0.1.4
 [0.1.1]: https://github.com/MatiasHiltunen/src2md/compare/v0.1.0...v0.1.1
