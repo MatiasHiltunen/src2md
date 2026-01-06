@@ -18,6 +18,20 @@ cargo install src2md
 
 Or download a binary from [Releases](https://github.com/MatiasHiltunen/src2md/releases).
 
+<details>
+<summary><strong>macOS: Allow unsigned binary</strong></summary>
+
+Downloaded binaries are blocked by Gatekeeper. To allow:
+
+```bash
+# Remove quarantine attribute after extracting
+xattr -d com.apple.quarantine src2md
+
+# Or: Right-click → Open → Open anyway
+```
+
+</details>
+
 ## Quick Start
 
 ```bash

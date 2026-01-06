@@ -60,6 +60,13 @@ jobs:
       - name: Build release binary
         run: cargo build --release --locked --target ${{ matrix.target }}
 
+      - name: Ad-hoc sign macOS binary
+        if: runner.os == 'macOS'
+        run: |
+          codesign --force --sign - target/${{ matrix.target }}/release/src2md
+          # Verify the signature
+          codesign --verify --verbose target/${{ matrix.target }}/release/src2md
+
       - name: Prepare archive (Unix)
         if: matrix.os != 'windows-latest'
         run: |
@@ -118,6 +125,22 @@ jobs:
           draft: false
           prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.ref, 'rc') }}
           generate_release_notes: true
+          body: |
+            ## Installation
+
+            ### macOS
+            After downloading, you may need to allow the app:
+            ```bash
+            # Remove quarantine attribute
+            xattr -d com.apple.quarantine src2md
+            
+            # Or right-click the file and select "Open" to bypass Gatekeeper
+            ```
+
+            ### Via Cargo
+            ```bash
+            cargo install src2md
+            ```
           files: |
             release/*
         env:
