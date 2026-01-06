@@ -41,6 +41,9 @@ src2md -o project.md
 # Only include certain file types
 src2md --ext rs,toml -o rust_code.md
 
+# Bundle a remote git repository
+src2md --git https://github.com/user/repo -o repo.md
+
 # Restore files from a bundle
 src2md --restore project.md --restore-path ./restored/
 ```
@@ -59,23 +62,78 @@ src2md --restore project.md --restore-path ./restored/
 - Lock files (`Cargo.lock`, `package-lock.json`, `yarn.lock`, etc.)
 - Its own previous output files
 
-## CLI Options
+## Usage Examples
+
+### Bundle a Local Project
+
+```bash
+# Bundle everything in current directory
+src2md -o output.md
+
+# Bundle specific directories or files
+src2md src/ tests/ README.md -o output.md
+
+# Only include Rust and TOML files
+src2md --ext rs,toml -o rust_only.md
+
+# Use a custom ignore file
+src2md --ignore-file .myignore -o output.md
+```
+
+### Clone and Bundle a Git Repository
+
+The `--git` flag clones a repository to a temporary directory, bundles it, and cleans up automatically:
+
+```bash
+# Clone and bundle a public repository
+src2md --git https://github.com/rust-lang/rust-by-example -o rust_examples.md
+
+# Specify a branch
+src2md --git https://github.com/user/repo --branch develop -o output.md
+
+# Combine with extension filter
+src2md --git https://github.com/user/repo --ext rs,md -o filtered.md
+```
+
+The output filename defaults to `{repo_name}_content_{timestamp}.md` if not specified.
+
+### Restore Files from Markdown
+
+The `--restore` flag extracts files from a src2md-generated Markdown back to the filesystem:
+
+```bash
+# Restore to a specific directory
+src2md --restore project.md --restore-path ./restored/
+
+# Restore to current directory (recreates original structure)
+src2md --restore project.md
+```
+
+This recreates the original directory structure and file contents. Useful for:
+- Recovering code shared in a Markdown document
+- Unpacking code snippets from LLM conversations
+- Reverting to a previous snapshot
+
+## CLI Reference
 
 ```
 src2md [OPTIONS] [PATHS]...
 
 Arguments:
-  [PATHS]...              Files or directories to include
+  [PATHS]...                Files or directories to include
 
 Options:
-  -o, --output <FILE>     Output file (default: {project}_{timestamp}.md)
-  --ignore-file <FILE>    Custom ignore file (like .gitignore)
-  -e, --ext <EXT>         Filter by extensions (comma-separated: rs,ts,js)
-  -v, --verbose           Increase verbosity (-v, -vv, -vvv)
-  --restore <FILE>        Restore files from a Markdown bundle
-  --restore-path <DIR>    Where to restore files
-  --fail-fast             Stop on first error
-  -h, --help              Print help
+  -o, --output <FILE>       Output file (default: {project}_{timestamp}.md)
+  --ignore-file <FILE>      Custom ignore file (like .gitignore)
+  -e, --ext <EXT>           Filter by extensions (comma-separated: rs,ts,js)
+  -v, --verbose             Increase verbosity (-v, -vv, -vvv)
+  --git <URL>               Clone and bundle a git repository
+  -b, --branch <BRANCH>     Git branch to checkout (requires --git)
+  --restore <FILE>          Restore files from a Markdown bundle
+  --restore-path <DIR>      Target directory for restore (default: current dir)
+  --fail-fast               Stop on first error
+  -h, --help                Print help
+  -V, --version             Print version
 ```
 
 ## Library Usage
