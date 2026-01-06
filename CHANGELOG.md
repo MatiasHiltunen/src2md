@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.7] - 2026-01-06
+
+### Fixed
+
+- Backtick fence calculation: Files with single/double inline backticks now correctly use minimum 3-backtick fences (was producing invalid 2-backtick fences)
+- Git clone: Removed shallow clone to ensure all files are properly fetched
+- OpenSSL cross-compilation: Use vendored OpenSSL for ARM64 Linux builds
+
 ## [0.1.6] - 2026-01-06
 
 ### Added
@@ -73,6 +81,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Binary file detection and placeholder output
 - Custom ignore file support
 
+[0.1.7]: https://github.com/MatiasHiltunen/src2md/compare/v0.1.6...v0.1.7
 [0.1.6]: https://github.com/MatiasHiltunen/src2md/compare/v0.1.5...v0.1.6
 [0.1.5]: https://github.com/MatiasHiltunen/src2md/compare/v0.1.4...v0.1.5
 [0.1.4]: https://github.com/MatiasHiltunen/src2md/compare/v0.1.1...v0.1.4

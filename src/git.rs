@@ -89,7 +89,7 @@ pub fn clone_repository(url: &str, branch: Option<&str>) -> Result<ClonedRepo> {
     // Configure fetch options
     let mut fetch_opts = FetchOptions::new();
     fetch_opts.remote_callbacks(callbacks);
-    fetch_opts.depth(1); // Shallow clone for speed
+    // Note: We do NOT use shallow clone (depth(1)) as it can miss files in some edge cases
 
     // Build and execute the clone
     let mut builder = RepoBuilder::new();

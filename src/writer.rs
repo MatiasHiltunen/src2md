@@ -156,9 +156,11 @@ fn calculate_fence(content: &str) -> String {
             }
         })
         .max()
-        .unwrap_or(2);
+        .unwrap_or(0);
 
-    "`".repeat(max_backtick_run + 1)
+    // Minimum fence length is 3, or one more than the max found in content
+    let fence_len = max_backtick_run.max(2) + 1;
+    "`".repeat(fence_len)
 }
 
 #[cfg(test)]
@@ -187,6 +189,20 @@ mod tests {
     fn test_calculate_fence_indented_backticks() {
         let content = "    ```rust\n    fn main() {}\n    ```";
         assert_eq!(calculate_fence(content), "````");
+    }
+
+    #[test]
+    fn test_calculate_fence_single_backticks() {
+        // Single backticks (inline code) should still result in minimum 3-backtick fence
+        let content = "`inline code` at start of line\nmore text";
+        assert_eq!(calculate_fence(content), "```");
+    }
+
+    #[test]
+    fn test_calculate_fence_double_backticks() {
+        // Double backticks should still result in minimum 3-backtick fence
+        let content = "``double backtick`` code";
+        assert_eq!(calculate_fence(content), "```");
     }
 
     #[test]

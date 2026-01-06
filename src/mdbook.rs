@@ -304,9 +304,11 @@ fn calculate_fence(content: &str) -> String {
             }
         })
         .max()
-        .unwrap_or(2);
+        .unwrap_or(0);
 
-    "`".repeat(max_backtick_run + 1)
+    // Minimum fence length is 3, or one more than the max found in content
+    let fence_len = max_backtick_run.max(2) + 1;
+    "`".repeat(fence_len)
 }
 
 /// Generates mdbook output from collected files.
@@ -377,5 +379,17 @@ mod tests {
         assert_eq!(calculate_fence("no backticks"), "```");
         assert_eq!(calculate_fence("```rust\ncode\n```"), "````");
         assert_eq!(calculate_fence("````\ncode\n````"), "`````");
+    }
+
+    #[test]
+    fn test_calculate_fence_single_backticks() {
+        // Single backticks (inline code) should still result in minimum 3-backtick fence
+        assert_eq!(calculate_fence("`inline code`"), "```");
+    }
+
+    #[test]
+    fn test_calculate_fence_double_backticks() {
+        // Double backticks should still result in minimum 3-backtick fence
+        assert_eq!(calculate_fence("``double``"), "```");
     }
 }
