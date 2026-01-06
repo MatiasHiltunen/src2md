@@ -1,7 +1,8 @@
 [package]
 name = "src2md"
-version = "0.1.4"
+version = "0.1.5"
 edition = "2024"
+rust-version = "1.85"
 authors = ["Matias Hiltunen <https://github.com/MatiasHiltunen>"]
 description = "Turn source code into a Markdown document with syntax highlighting, or extract it back."
 license = "MIT"
