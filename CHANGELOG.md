@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.8] - 2026-02-18
+
+### Fixed
+
+- Restore security: block path traversal and absolute-path writes when using `--restore-path`
+- Restore parsing: ignore `##` headings inside fenced code blocks
+- Restore fidelity: preserve leading whitespace in restored filenames
+- mdbook output: always generate chapter files for chapters referenced from `SUMMARY.md`
+
 ## [0.1.7] - 2026-01-06
 
 ### Fixed
@@ -81,10 +90,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Binary file detection and placeholder output
 - Custom ignore file support
 
+[0.1.8]: https://github.com/MatiasHiltunen/src2md/compare/v0.1.7...v0.1.8
 [0.1.7]: https://github.com/MatiasHiltunen/src2md/compare/v0.1.6...v0.1.7
 [0.1.6]: https://github.com/MatiasHiltunen/src2md/compare/v0.1.5...v0.1.6
 [0.1.5]: https://github.com/MatiasHiltunen/src2md/compare/v0.1.4...v0.1.5
 [0.1.4]: https://github.com/MatiasHiltunen/src2md/compare/v0.1.1...v0.1.4
 [0.1.1]: https://github.com/MatiasHiltunen/src2md/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/MatiasHiltunen/src2md/releases/tag/v0.1.0
-

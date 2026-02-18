@@ -186,8 +186,8 @@ impl MdbookWriter {
                 let child_rel_path = rel_path.join(name);
                 let child_src_path = src_path.join(name);
 
-                // Write this chapter's file if it has files
-                if !child.files.is_empty() {
+                // Write a chapter file for any chapter with content so SUMMARY links stay valid.
+                if child.has_content() {
                     let md_filename = format!("{}.md", child_rel_path.display());
                     let md_path = self.output_dir.join(&md_filename);
 

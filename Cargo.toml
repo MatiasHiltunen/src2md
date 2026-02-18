@@ -1,6 +1,6 @@
 [package]
 name = "src2md"
-version = "0.1.7"
+version = "0.1.8"
 edition = "2024"
 rust-version = "1.85"
 authors = ["Matias Hiltunen <https://github.com/MatiasHiltunen>"]

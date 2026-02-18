@@ -625,6 +625,40 @@ mod mdbook_tests {
     }
 
     #[tokio::test]
+    async fn it_writes_parent_chapter_files_when_only_nested_content_exists() -> anyhow::Result<()>
+    {
+        let temp_dir = tempdir()?;
+        let root_path = temp_dir.path().to_path_buf();
+
+        let nested_dir = root_path.join("src").join("utils");
+        std::fs::create_dir_all(&nested_dir)?;
+        std::fs::write(nested_dir.join("helpers.rs"), "// helpers")?;
+
+        let output_dir = root_path.join("book");
+
+        let entries = collect_files(&root_path, None, &HashSet::new(), None, &HashSet::new())?;
+        generate_mdbook(&entries, &root_path, &output_dir).await?;
+
+        let summary = fs::read_to_string(output_dir.join("SUMMARY.md")).await?;
+        assert!(
+            summary.contains("[src](./src.md)"),
+            "Should link to src chapter file"
+        );
+        assert!(
+            summary.contains("[utils](./src/utils.md)"),
+            "Should link to nested utils chapter file"
+        );
+
+        assert!(output_dir.join("src.md").exists(), "src.md should exist");
+        assert!(
+            output_dir.join("src").join("utils.md").exists(),
+            "src/utils.md should exist"
+        );
+
+        Ok(())
+    }
+
+    #[tokio::test]
     async fn it_handles_binary_files_in_mdbook() -> anyhow::Result<()> {
         let temp_dir = tempdir()?;
         let root_path = temp_dir.path().to_path_buf();
