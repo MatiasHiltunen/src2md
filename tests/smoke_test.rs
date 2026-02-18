@@ -640,12 +640,13 @@ mod mdbook_tests {
         generate_mdbook(&entries, &root_path, &output_dir).await?;
 
         let summary = fs::read_to_string(output_dir.join("SUMMARY.md")).await?;
+        let normalized_summary = summary.replace('\\', "/");
         assert!(
-            summary.contains("[src](./src.md)"),
+            normalized_summary.contains("[src](./src.md)"),
             "Should link to src chapter file"
         );
         assert!(
-            summary.contains("[utils](./src/utils.md)"),
+            normalized_summary.contains("[utils](./src/utils.md)"),
             "Should link to nested utils chapter file"
         );
 
